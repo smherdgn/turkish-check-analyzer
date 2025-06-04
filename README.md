@@ -69,6 +69,11 @@ project/
     # pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
     ```
 
+5.  **PaddleOCR (Optional)**: PaddleOCR is used for a third OCR pass. It has heavier dependencies so install only if you need it:
+    ```bash
+    pip install paddleocr
+    ```
+
 ## Setup
 
 1.  **Clone the repository or create the project files** as provided.
@@ -275,4 +280,36 @@ The API will return appropriate HTTP status codes for errors. The response body 
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
+
+---
+
+## Türkçe Bilgilendirme
+
+Bu bölüm, **Turkish Check OCR and Analysis API** projesinin kısa bir Türkçe özetini sunar.
+
+Bu Python arka ucu FastAPI kullanır ve Türk banka çeklerinden metin çıkarmak için Tesseract, EasyOCR ve isteğe bağlı olarak PaddleOCR'den faydalanır. Elde edilen metin yerelde çalışan Ollama LLM modellerine gönderilir ve yapılandırılmış JSON sonuçları alınır.
+
+### Özellikler
+
+- **API Uç Noktaları**:
+  - `GET /api/ollama-models`: Ollama üzerindeki mevcut modelleri listeler.
+  - `POST /api/ocr-check`: Çek görsellerini yükleyip seçilen modeller ile analiz eder.
+- **Görüntü Ön İşleme**: Gri tonlama, gürültü giderme, eğiklik düzeltme ve uyarlamalı eşikleme adımlarını içerir.
+- **Üçlü OCR**: Tesseract, EasyOCR ve PaddleOCR çıktıları birleştirilir.
+- **Çoklu LLM Analizi**: Birden fazla Ollama modeliyle çalışarak JSON formatında sonuç döner.
+- **Yapılandırılabilir**: Ollama API adresi ve istemci promptu değiştirilebilir.
+
+### Kurulum
+
+1. Python 3.10 veya üzeri bir sürüm kurulu olmalıdır.
+2. `project/requirements.txt` içindeki bağımlılıkları yükleyin:
+   ```bash
+   pip install -r project/requirements.txt
+   ```
+   (PaddleOCR büyük boyutlu olduğundan kurulum sürebilir.)
+3. Ollama'yı kurup kullanmak istediğiniz modelleri `ollama pull` komutu ile indirin.
+4. Uygulamayı çalıştırmak için:
+   ```bash
+   uvicorn app:app --reload --host 0.0.0.0 --port 8000
+   ```
 
