@@ -1,6 +1,6 @@
 # Turkish Check OCR and Analysis API
 
-This project provides a Python backend service using FastAPI to process scanned images of Turkish bank checks. It utilizes local OCR engines (Tesseract and EasyOCR) to extract text and a locally running Ollama LLM (e.g., LLaMA 3) to analyze the extracted text and return a structured JSON result. This backend is designed to be used with a corresponding frontend application that handles image uploads and displays results.
+This project provides a Python backend service using FastAPI to process scanned images of Turkish bank checks. It utilizes local OCR engines (Tesseract, EasyOCR and PaddleOCR) to extract text and a locally running Ollama LLM (e.g., LLaMA 3) to analyze the extracted text and return a structured JSON result. This backend is designed to be used with a corresponding frontend application that handles image uploads and displays results.
 
 ## Features
 
@@ -8,7 +8,7 @@ This project provides a Python backend service using FastAPI to process scanned 
   - `GET /api/ollama-models`: Lists available models from the local Ollama instance.
   - `POST /api/ocr-check`: For uploading check images and selecting Ollama models for analysis.
 - **Image Pre-processing**: Includes grayscale conversion, denoising, skew correction, adaptive thresholding using OpenCV and Pillow.
-- **Dual OCR**: Extracts text using both Tesseract OCR and EasyOCR.
+- **Triple OCR**: Extracts text using Tesseract, EasyOCR, and PaddleOCR.
 - **Multi-LLM Analysis**: Sends combined OCR text to one or more selected local Ollama LLM instances with a custom prompt for structured data extraction (e.g., IBAN, amount, date, check side).
 - **Configurable**: Ollama API URL (for backend-to-Ollama communication) and prompt template can be configured.
 
