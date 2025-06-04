@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 from PIL import Image
 import pytesseract
