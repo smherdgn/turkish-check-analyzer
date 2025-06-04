@@ -126,6 +126,18 @@ project/
     - `--reload`: Enables auto-reload on code changes (useful for development).
     - The API will be available at `http://localhost:8000`. You can access the interactive API documentation at `http://localhost:8000/docs`.
 
+## Running Tests
+
+Backend unit tests use **pytest**, and frontend tests use **vitest**.
+
+```bash
+# Python tests
+pytest
+
+# Frontend tests
+npm test
+```
+
 ## API Usage
 
 ### Endpoint: `GET /api/ollama-models`
@@ -254,3 +266,13 @@ The API will return appropriate HTTP status codes for errors. The response body 
 - **Ollama Model**: The choice of LLM (e.g., `llama3`, `mistral`, `phi3`) can significantly impact processing time and the quality of the extracted JSON.
 - **Logging**: The current backend uses `print()` for some informational messages. For production or more detailed debugging, consider integrating Python's `logging` module.
 - **Frontend-Backend Contract**: Ensure the JSON structures (especially for `POST /api/ocr-check` request and response) stay synchronized between the frontend (e.g., `types.ts`) and backend (`app.py`).
+
+
+```
+
+```
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
