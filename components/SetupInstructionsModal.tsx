@@ -1,144 +1,171 @@
-import React, { useState } from 'react';
-import { XIcon } from 'lucide-react';
-
-const GARANTI_GREEN = '#1EA48A';
+// components/SetupInstructionsModal.tsx
+import React from "react";
+import { X, Server, Cpu, Eye, Download, ExternalLink } from "lucide-react";
 
 interface SetupInstructionsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type ActiveTab = 'windows' | 'macos';
-
-export const SetupInstructionsModal: React.FC<SetupInstructionsModalProps> = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('windows');
-
-  if (!isOpen) {
-    return null;
-  }
-
-  const commonRestartNote = "After installation or configuration changes, please restart the backend server for changes to take effect.";
-
-  const TabButton: React.FC<{ tabId: ActiveTab; currentTab: ActiveTab; onClick: (tabId: ActiveTab) => void; children: React.ReactNode }> = 
-    ({ tabId, currentTab, onClick, children }) => (
-    <button
-      onClick={() => onClick(tabId)}
-      className={`px-4 py-2 text-sm font-medium rounded-t-lg focus:outline-none transition-colors
-        ${currentTab === tabId 
-          ? `text-white bg-[${GARANTI_GREEN}]` 
-          : `text-gray-600 hover:bg-gray-200 hover:text-[${GARANTI_GREEN}]`
-        }`}
-    >
-      {children}
-    </button>
-  );
+export const SetupInstructionsModal: React.FC<SetupInstructionsModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
+  if (!isOpen) return null;
 
   return (
-    <div 
-        className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 transition-opacity duration-300"
-        onClick={onClose}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="setup-instructions-title"
-    >
-      <div 
-        className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative"
-        onClick={(e) => e.stopPropagation()} // Prevent click inside modal from closing it
-      >
-        <button 
-          onClick={onClose} 
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
-          aria-label="Close setup instructions"
-        >
-          <XIcon size={24} />
-        </button>
-
-        <h2 id="setup-instructions-title" className="text-2xl font-bold mb-6 text-center" style={{ color: GARANTI_GREEN }}>
-          OCR Tool Setup Instructions
-        </h2>
-        
-        <p className="text-center text-gray-600 mb-6">
-          It seems Tesseract OCR or EasyOCR might not be set up correctly on your backend server.
-          Please follow these instructions:
-        </p>
-
-        <div className="mb-4 border-b border-gray-200">
-          <nav className="-mb-px flex space-x-1" aria-label="Tabs">
-            <TabButton tabId="windows" currentTab={activeTab} onClick={setActiveTab}>Windows</TabButton>
-            <TabButton tabId="macos" currentTab={activeTab} onClick={setActiveTab}>macOS</TabButton>
-          </nav>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Setup Instructions
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
-        <div className="space-y-6 text-sm">
-          {activeTab === 'windows' && (
-            <div>
-              <h3 className="text-lg font-semibold mb-2 text-gray-800">Windows Setup</h3>
-              
-              <div className="mb-4 p-3 bg-gray-50 rounded-md">
-                <h4 className="font-semibold text-md mb-1" style={{ color: GARANTI_GREEN }}>1. Tesseract OCR</h4>
-                <p className="mb-1">Download the Tesseract installer from <a href="https://github.com/UB-Mannheim/tesseract/wiki" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Tesseract at UB Mannheim</a>.</p>
-                <p className="mb-1">During installation:</p>
-                <ul className="list-disc list-inside pl-4 text-gray-700">
-                  <li>Ensure "Add Tesseract to system PATH" is checked.</li>
-                  <li>Install language packs: at least "Turkish" (tur) and "English" (eng).</li>
-                </ul>
-                <p className="mt-1">Verify by opening Command Prompt and typing: <code className="bg-gray-200 px-1 rounded">tesseract --version</code></p>
+        <div className="p-6">
+          <div className="prose max-w-none">
+            <p className="text-gray-600 mb-6">
+              To use the Turkish Check Analyzer, you need to set up the
+              following components on your system:
+            </p>
+
+            <div className="space-y-6">
+              {/* Ollama Setup */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <div className="flex items-center mb-3">
+                  <Cpu className="h-6 w-6 text-blue-600 mr-2" />
+                  <h3 className="text-lg font-semibold text-blue-900">
+                    1. Ollama LLM Service
+                  </h3>
+                </div>
+                <div className="space-y-3 text-sm text-blue-800">
+                  <p>
+                    <strong>Install Ollama:</strong>
+                  </p>
+                  <div className="bg-blue-100 rounded p-3 font-mono text-xs">
+                    <p># macOS/Linux:</p>
+                    <p>curl -fsSL https://ollama.ai/install.sh | sh</p>
+                    <p className="mt-2"># Windows: Download from ollama.ai</p>
+                  </div>
+                  <p>
+                    <strong>Start Ollama and install models:</strong>
+                  </p>
+                  <div className="bg-blue-100 rounded p-3 font-mono text-xs">
+                    <p>ollama serve</p>
+                    <p>ollama pull llama2:7b</p>
+                    <p>ollama pull deepseek-r1:14b</p>
+                  </div>
+                  <div className="flex items-center text-blue-700">
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    <a
+                      href="https://ollama.ai"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      Visit ollama.ai for more information
+                    </a>
+                  </div>
+                </div>
               </div>
 
-              <div className="p-3 bg-gray-50 rounded-md">
-                <h4 className="font-semibold text-md mb-1" style={{ color: GARANTI_GREEN }}>2. EasyOCR (Python)</h4>
-                <p className="mb-1">EasyOCR is installed via pip (see <code className="bg-gray-200 px-1 rounded">requirements.txt</code>). If issues persist, it might be related to PyTorch.</p>
-                <p className="mb-1">Ensure you have Python and pip installed.</p>
-                <p className="mb-1">From your project's virtual environment, <code className="bg-gray-200 px-1 rounded">pip install -r requirements.txt</code> should handle it.</p>
-                <p className="mb-1">If you encounter PyTorch issues, you might need to install it separately first. For CPU:
-                  <br /><code className="bg-gray-200 px-1 rounded text-xs">pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu</code>
-                </p>
+              {/* Backend Setup */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                <div className="flex items-center mb-3">
+                  <Server className="h-6 w-6 text-green-600 mr-2" />
+                  <h3 className="text-lg font-semibold text-green-900">
+                    2. Python Backend Service
+                  </h3>
+                </div>
+                <div className="space-y-3 text-sm text-green-800">
+                  <p>
+                    <strong>Install dependencies:</strong>
+                  </p>
+                  <div className="bg-green-100 rounded p-3 font-mono text-xs">
+                    <p>pip install fastapi uvicorn aiohttp</p>
+                    <p>pip install pytesseract easyocr opencv-python</p>
+                    <p>pip install pillow numpy</p>
+                  </div>
+                  <p>
+                    <strong>Start the backend:</strong>
+                  </p>
+                  <div className="bg-green-100 rounded p-3 font-mono text-xs">
+                    <p>python main.py</p>
+                    <p># or</p>
+                    <p>uvicorn main:app --host 0.0.0.0 --port 8000 --reload</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* OCR Setup */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                <div className="flex items-center mb-3">
+                  <Eye className="h-6 w-6 text-purple-600 mr-2" />
+                  <h3 className="text-lg font-semibold text-purple-900">
+                    3. OCR Tools Installation
+                  </h3>
+                </div>
+                <div className="space-y-3 text-sm text-purple-800">
+                  <p>
+                    <strong>Tesseract OCR:</strong>
+                  </p>
+                  <div className="bg-purple-100 rounded p-3 font-mono text-xs">
+                    <p># Ubuntu/Debian:</p>
+                    <p>sudo apt-get install tesseract-ocr tesseract-ocr-tur</p>
+                    <p className="mt-2"># macOS:</p>
+                    <p>brew install tesseract tesseract-lang</p>
+                    <p className="mt-2">
+                      # Windows: Download from GitHub releases
+                    </p>
+                  </div>
+                  <p>
+                    <strong>EasyOCR:</strong> Already included in Python
+                    dependencies above
+                  </p>
+                </div>
+              </div>
+
+              {/* Verification */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center mb-3">
+                  <Download className="h-6 w-6 text-gray-600 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    4. Verify Installation
+                  </h3>
+                </div>
+                <div className="space-y-3 text-sm text-gray-700">
+                  <p>
+                    <strong>Test each component:</strong>
+                  </p>
+                  <div className="bg-gray-100 rounded p-3 font-mono text-xs">
+                    <p># Test Ollama:</p>
+                    <p>curl http://localhost:11434/api/tags</p>
+                    <p className="mt-2"># Test Backend:</p>
+                    <p>curl http://localhost:8000/api/health</p>
+                    <p className="mt-2"># Test Tesseract:</p>
+                    <p>tesseract --version</p>
+                  </div>
+                </div>
               </div>
             </div>
-          )}
 
-          {activeTab === 'macos' && (
-            <div>
-              <h3 className="text-lg font-semibold mb-2 text-gray-800">macOS Setup</h3>
-              
-              <div className="mb-4 p-3 bg-gray-50 rounded-md">
-                <h4 className="font-semibold text-md mb-1" style={{ color: GARANTI_GREEN }}>1. Tesseract OCR</h4>
-                <p className="mb-1">Install using Homebrew:</p>
-                <pre className="bg-gray-200 p-2 rounded text-xs overflow-x-auto">
-                  brew install tesseract<br/>
-                  brew install tesseract-lang # For all language packs, or install specific ones
-                </pre>
-                 <p className="mt-1">Alternatively, for specific languages like Turkish and English after installing tesseract core:</p>
-                 <pre className="bg-gray-200 p-2 rounded text-xs overflow-x-auto">
-                   {`# After 'brew install tesseract', download .traineddata files (e.g., tur.traineddata, eng.traineddata)\n# from https://github.com/tesseract-ocr/tessdata_fast\n# and place them in your Tesseract's tessdata directory.\n# Find path with: tesseract --print-tessdata-dir`}
-                 </pre>
-                <p className="mt-1">Verify by opening Terminal and typing: <code className="bg-gray-200 px-1 rounded">tesseract --version</code></p>
-              </div>
-
-              <div className="p-3 bg-gray-50 rounded-md">
-                <h4 className="font-semibold text-md mb-1" style={{ color: GARANTI_GREEN }}>2. EasyOCR (Python)</h4>
-                <p className="mb-1">EasyOCR is installed via pip (see <code className="bg-gray-200 px-1 rounded">requirements.txt</code>). If issues persist, it might be related to PyTorch.</p>
-                <p className="mb-1">Ensure you have Python and pip installed (often pre-installed or via Homebrew <code className="bg-gray-200 px-1 rounded">brew install python</code>).</p>
-                <p className="mb-1">From your project's virtual environment, <code className="bg-gray-200 px-1 rounded">pip install -r requirements.txt</code> should handle it.</p>
-                 <p className="mb-1">If you encounter PyTorch issues, you might need to install it separately. For CPU:
-                  <br /><code className="bg-gray-200 px-1 rounded text-xs">pip install torch torchvision torchaudio</code>
-                </p>
-              </div>
+            <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-amber-800 text-sm">
+                <strong>Note:</strong> All services should be running
+                simultaneously for the application to work properly. The
+                frontend expects the backend on port 8000 and Ollama on port
+                11434.
+              </p>
             </div>
-          )}
-           <p className="mt-6 text-center text-xs text-gray-500 italic">{commonRestartNote}</p>
-        </div>
-
-        <div className="mt-8 text-center">
-          <button
-            onClick={onClose}
-            className={`px-6 py-2 text-white rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[${GARANTI_GREEN}]`}
-            style={{ backgroundColor: GARANTI_GREEN, }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#008C73'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = GARANTI_GREEN }
-          >
-            Close
-          </button>
+          </div>
         </div>
       </div>
     </div>

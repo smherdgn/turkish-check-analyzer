@@ -1,4 +1,5 @@
-export interface CheckDetails { // LLM output structure (as per the prompt)
+export interface CheckDetails {
+  // LLM output structure (as per the prompt)
   iban: string | null;
   account_holder: string | null;
   amount_number: string | number | null;
@@ -6,7 +7,7 @@ export interface CheckDetails { // LLM output structure (as per the prompt)
   check_number: string | null;
   date: string | null;
   bank_name: string | null;
-  side: 'Front' | 'Back' | 'Unknown' | null;
+  side: "Front" | "Back" | "Unknown" | null;
 }
 
 export interface LLMAnalysis {
@@ -29,6 +30,7 @@ export interface ProcessingError {
 
 // Type for models fetched from Ollama
 export interface OllamaModel {
+  details: any;
   name: string;
   modified_at: string;
   size: number;
