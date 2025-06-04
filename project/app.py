@@ -15,7 +15,11 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.background import BackgroundTasks
 
 from utils.image_utils import preprocess_image
-from utils.ocr_utils import extract_text_easyocr, extract_text_tesseract
+from utils.ocr_utils import (
+    extract_text_easyocr,
+    extract_text_tesseract,
+    extract_text_paddleocr,
+)
 
 # ===== CONFIGURATION =====
 OLLAMA_API_BASE_URL = os.getenv("OLLAMA_API_BASE_URL", "http://localhost:11434")
@@ -172,8 +176,8 @@ def load_prompt() -> str:
         raise HTTPException(status_code=500, detail=f"Failed to read prompt: {e}")
 
 
-async def run_ocr_parallel(processed_image, tracker: ProgressTracker) -> Tuple[Optional[str], Optional[str]]:
-    """Run both OCR engines in parallel with progress tracking."""
+async def run_ocr_parallel(processed_image, tracker: ProgressTracker) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    """Run OCR engines in parallel with progress tracking."""
     tracker.update(2, "processing", "Starting OCR engines in parallel...")
     
     async def run_tesseract():
@@ -197,18 +201,35 @@ async def run_ocr_parallel(processed_image, tracker: ProgressTracker) -> Tuple[O
         except Exception as e:
             tracker.update(2, "error", f"EasyOCR failed: {str(e)}")
             return None
-    
-    ocr_results = await asyncio.gather(run_tesseract(), run_easyocr(), return_exceptions=True)
-    
+
+    async def run_paddleocr():
+        try:
+            tracker.update(2, "processing", "Running PaddleOCR...")
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, extract_text_paddleocr, processed_image)
+            tracker.update(2, "info", f"PaddleOCR completed: {len(result) if result else 0} characters")
+            return result
+        except Exception as e:
+            tracker.update(2, "error", f"PaddleOCR failed: {str(e)}")
+            return None
+    ocr_results = await asyncio.gather(
+        run_tesseract(),
+        run_easyocr(),
+        run_paddleocr(),
+        return_exceptions=True,
+    )
+
     tesseract_result = ocr_results[0] if not isinstance(ocr_results[0], Exception) else None
     easyocr_result = ocr_results[1] if not isinstance(ocr_results[1], Exception) else None
-    
+    paddleocr_result = ocr_results[2] if not isinstance(ocr_results[2], Exception) else None
+
     tracker.update(3, "success", "OCR processing completed", {
         "tesseract_chars": len(tesseract_result) if tesseract_result else 0,
-        "easyocr_chars": len(easyocr_result) if easyocr_result else 0
+        "easyocr_chars": len(easyocr_result) if easyocr_result else 0,
+        "paddleocr_chars": len(paddleocr_result) if paddleocr_result else 0,
     })
-    
-    return tesseract_result, easyocr_result
+
+    return tesseract_result, easyocr_result, paddleocr_result
 
 
 async def call_ollama_model(session: aiohttp.ClientSession, base_url: str, model: str, prompt: str, tracker: ProgressTracker) -> Dict:
@@ -348,16 +369,16 @@ def validate_models(selected_models_json: str, tracker: ProgressTracker) -> List
         )
 
 
-def combine_ocr_results(tesseract_text: Optional[str], easyocr_text: Optional[str], tracker: ProgressTracker) -> str:
+def combine_ocr_results(tesseract_text: Optional[str], easyocr_text: Optional[str], paddle_text: Optional[str], tracker: ProgressTracker) -> str:
     """Combine OCR results intelligently with progress tracking."""
     tracker.update(3, "processing", "Combining OCR results...")
-    
-    valid_results = [text for text in [tesseract_text, easyocr_text] if text and text.strip()]
+
+    valid_results = [text for text in [tesseract_text, easyocr_text, paddle_text] if text and text.strip()]
     
     if not valid_results:
         tracker.update(3, "error", "No valid OCR results to combine")
         return ""
-    
+
     combined = "\n---OCR SEPARATION---\n".join(valid_results)
     
     tracker.update(3, "success", f"OCR results combined: {len(combined)} total characters")
@@ -382,8 +403,8 @@ async def process_check_background(
         tracker.update(1, "success", f"Image preprocessing completed ({len(image_bytes)} bytes)")
         
         # Phase 2-3: OCR Processing
-        ocr_tesseract, ocr_easyocr = await run_ocr_parallel(processed_image, tracker)
-        combined_text = combine_ocr_results(ocr_tesseract, ocr_easyocr, tracker)
+        ocr_tesseract, ocr_easyocr, ocr_paddle = await run_ocr_parallel(processed_image, tracker)
+        combined_text = combine_ocr_results(ocr_tesseract, ocr_easyocr, ocr_paddle, tracker)
         
         if not combined_text:
             tracker.update(3, "error", "No text extracted from image")
@@ -410,6 +431,7 @@ async def process_check_background(
         result = {
             "raw_ocr_tesseract": ocr_tesseract,
             "raw_ocr_easyocr": ocr_easyocr,
+            "raw_ocr_paddleocr": ocr_paddle,
             "llm_analyses": analyses,
             "processing_time": round(time.time() - tracker.start_time, 2),
             "success_rate": f"{len(successful_analyses)}/{len(selected_models)}"
@@ -586,8 +608,8 @@ async def ocr_check_sync(
         tracker.update(1, "success", "Image preprocessing completed")
         
         # OCR Processing
-        ocr_tesseract, ocr_easyocr = await run_ocr_parallel(processed_image, tracker)
-        combined_text = combine_ocr_results(ocr_tesseract, ocr_easyocr, tracker)
+        ocr_tesseract, ocr_easyocr, ocr_paddle = await run_ocr_parallel(processed_image, tracker)
+        combined_text = combine_ocr_results(ocr_tesseract, ocr_easyocr, ocr_paddle, tracker)
         
         if not combined_text:
             raise HTTPException(status_code=422, detail="OCR failed: No text could be extracted")
@@ -611,6 +633,7 @@ async def ocr_check_sync(
         response_data = {
             "raw_ocr_tesseract": ocr_tesseract,
             "raw_ocr_easyocr": ocr_easyocr,
+            "raw_ocr_paddleocr": ocr_paddle,
             "llm_analyses": analyses,
             "processing_time": round(time.time() - tracker.start_time, 2),
             "success_rate": f"{len(successful_analyses)}/{len(selected_models)}"
