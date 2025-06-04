@@ -258,3 +258,8 @@ The API will return appropriate HTTP status codes for errors. The response body 
 ```
 
 ```
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
