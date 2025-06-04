@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Upload } from "lucide-react";
 
 interface ImageUploadProps {
-  onImageUpload: (file: File) => void;
+  onImageUpload: (files: File[]) => void;
   disabled: boolean;
 }
 
@@ -27,15 +27,15 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0] && !disabled) {
-      onImageUpload(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0 && !disabled) {
+      onImageUpload(Array.from(e.dataTransfer.files));
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-    if (e.target.files && e.target.files[0] && !disabled) {
-      onImageUpload(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0 && !disabled) {
+      onImageUpload(Array.from(e.target.files));
     }
   };
 
@@ -74,6 +74,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
             <input
               type="file"
               accept="image/*"
+              multiple
               onChange={handleChange}
               disabled={disabled}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"

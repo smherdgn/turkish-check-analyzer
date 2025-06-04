@@ -11,7 +11,7 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({
   title,
   message,
 }) => (
-  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+  <div className="bg-red-50 border border-red-200 rounded-lg p-4" role="alert">
     <div className="flex">
       <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
       <div>
