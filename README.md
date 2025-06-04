@@ -126,6 +126,18 @@ project/
     - `--reload`: Enables auto-reload on code changes (useful for development).
     - The API will be available at `http://localhost:8000`. You can access the interactive API documentation at `http://localhost:8000/docs`.
 
+## Running Tests
+
+Backend unit tests use **pytest**, and frontend tests use **vitest**.
+
+```bash
+# Python tests
+pytest
+
+# Frontend tests
+npm test
+```
+
 ## API Usage
 
 ### Endpoint: `GET /api/ollama-models`

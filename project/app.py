@@ -104,10 +104,11 @@ async def ocr_check(
 
     analyses = []
     for model in selected_models:
+        clean_model = model.strip()
         try:
             resp = requests.post(
                 f"{OLLAMA_API_BASE_URL}/api/generate",
-                json={"model": model, "prompt": final_prompt, "stream": False},
+                json={"model": clean_model, "prompt": final_prompt, "stream": False},
                 timeout=180,
             )
             resp.raise_for_status()
