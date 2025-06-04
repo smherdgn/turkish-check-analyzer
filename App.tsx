@@ -8,7 +8,7 @@ import { ModelSelector } from './components/ModelSelector';
 import { SetupInstructionsModal } from './components/SetupInstructionsModal';
 import type { FullCheckAnalysisResponse, LLMAnalysis, ProcessingError, OllamaModel, CheckDetails } from './types';
 import { jsPDF } from 'jspdf';
-import { DownloadIcon } from 'lucide-react'; // For PDF download button
+import { DownloadIcon, HelpCircleIcon } from 'lucide-react'; // For PDF download button and help icon
 
 const GARANTI_GREEN = '#1EA48A';
 const PLACEHOLDER_CHECK_IMAGE_URL = `https://placehold.co/600x300/e9f6f4/1EA48A/png?text=Sample%20Garanti%20BBVA%20Check&font=source-sans-pro`;
@@ -30,6 +30,9 @@ const App: React.FC = () => {
   const [availableOllamaModels, setAvailableOllamaModels] = useState<OllamaModel[]>([]);
   const [selectedOllamaModels, setSelectedOllamaModels] = useState<string[]>([]);
   const [showSetupModal, setShowSetupModal] = useState<boolean>(false);
+  const [ollamaUrl, setOllamaUrl] = useState<string>(() =>
+    localStorage.getItem('ollamaUrl') || 'http://localhost:11434'
+  );
 
   const checkForSetupError = (errorMessage: string) => {
     const lowerErrorMessage = errorMessage.toLowerCase();
@@ -44,32 +47,34 @@ const App: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchOllamaModels = async () => {
-      setIsLoading(true);
-      setCurrentStep('Fetching available LLM models from Ollama...');
-      setError(null);
-      try {
-        // Use the full backend URL
-        const response = await fetch(`${BACKEND_BASE_URL}/api/ollama-models`);
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ detail: `Failed to fetch models (HTTP ${response.status}): ${response.statusText}. Is the backend server at ${BACKEND_BASE_URL} running?` }));
-          const detailMessage = errorData.detail || `Failed to fetch models: ${response.status}`;
-          checkForSetupError(detailMessage);
-          throw new Error(detailMessage);
-        }
-        const models: OllamaModel[] = await response.json();
-        setAvailableOllamaModels(models);
-      } catch (err) {
-        console.error(err);
-        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred while fetching models.';
-        setError({ step: 'Model Fetch', message: errorMessage });
-        checkForSetupError(errorMessage);
-      } finally {
-        setIsLoading(false);
-        setCurrentStep('');
+  const fetchOllamaModels = async () => {
+    setIsLoading(true);
+    setCurrentStep('Fetching available LLM models from Ollama...');
+    setError(null);
+    try {
+      const response = await fetch(
+        `${BACKEND_BASE_URL}/api/ollama-models?ollama_url=${encodeURIComponent(ollamaUrl)}`
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: `Failed to fetch models (HTTP ${response.status}): ${response.statusText}. Is the backend server at ${BACKEND_BASE_URL} running?` }));
+        const detailMessage = errorData.detail || `Failed to fetch models: ${response.status}`;
+        checkForSetupError(detailMessage);
+        throw new Error(detailMessage);
       }
-    };
+      const models: OllamaModel[] = await response.json();
+      setAvailableOllamaModels(models);
+    } catch (err) {
+      console.error(err);
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred while fetching models.';
+      setError({ step: 'Model Fetch', message: errorMessage });
+      checkForSetupError(errorMessage);
+    } finally {
+      setIsLoading(false);
+      setCurrentStep('');
+    }
+  };
+
+  useEffect(() => {
     fetchOllamaModels();
   }, []);
 
@@ -105,10 +110,13 @@ const App: React.FC = () => {
       try {
         setCurrentStep('Extracting text with Tesseract & EasyOCR...');
         // Use the full backend URL
-        const response = await fetch(`${BACKEND_BASE_URL}/api/ocr-check`, {
-          method: 'POST',
-          body: formData,
-        });
+        const response = await fetch(
+          `${BACKEND_BASE_URL}/api/ocr-check?ollama_url=${encodeURIComponent(ollamaUrl)}`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        );
 
         if (!response.ok) {
           let errorData;
@@ -319,6 +327,32 @@ const App: React.FC = () => {
         <p className="text-xs text-gray-500 mt-1">
           (Frontend API calls target: {BACKEND_BASE_URL})
         </p>
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-2">
+          <label htmlFor="ollama-url" className="font-medium text-sm text-gray-700">Ollama URL:</label>
+          <input
+            id="ollama-url"
+            type="text"
+            value={ollamaUrl}
+            onChange={(e) => setOllamaUrl(e.target.value)}
+            onBlur={() => localStorage.setItem('ollamaUrl', ollamaUrl)}
+            className="border border-gray-300 rounded px-2 py-1 w-64 text-sm"
+            placeholder="http://localhost:11434"
+          />
+          <button
+            onClick={fetchOllamaModels}
+            className={`px-3 py-1 rounded text-white text-sm`}
+            style={{ backgroundColor: GARANTI_GREEN }}
+          >
+            Check
+          </button>
+          <button
+            onClick={() => setShowSetupModal(true)}
+            className="text-gray-600 hover:text-gray-800"
+            aria-label="Setup instructions"
+          >
+            <HelpCircleIcon size={20} />
+          </button>
+        </div>
       </header>
 
       <main 

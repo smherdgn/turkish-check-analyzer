@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 import requests
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -30,9 +30,10 @@ def load_prompt() -> str:
 
 
 @app.get("/api/ollama-models")
-def list_ollama_models():
+def list_ollama_models(ollama_url: str = Query(None)):
+    base_url = ollama_url or OLLAMA_API_BASE_URL
     try:
-        resp = requests.get(f"{OLLAMA_API_BASE_URL}/api/tags", timeout=10)
+        resp = requests.get(f"{base_url}/api/tags", timeout=10)
         resp.raise_for_status()
         data = resp.json()
         # Newer Ollama returns {"models": [...]}
@@ -42,7 +43,7 @@ def list_ollama_models():
     except Exception as exc:
         raise HTTPException(
             status_code=503,
-            detail=f"Ollama service at {OLLAMA_API_BASE_URL} not reachable. {exc}",
+            detail=f"Ollama service at {base_url} not reachable. {exc}",
         ) from exc
 
 
@@ -50,6 +51,7 @@ def list_ollama_models():
 async def ocr_check(
     image_file: UploadFile = File(...),
     selected_models_json: str = Form(...),
+    ollama_url: str = Query(None),
 ):
     allowed = {"image/png", "image/jpeg", "image/jpg", "image/webp"}
     if image_file.content_type not in allowed:
@@ -101,11 +103,12 @@ async def ocr_check(
     prompt_template = load_prompt()
     final_prompt = prompt_template.replace("${ocr_text}", combined_text)
 
+    base_url = ollama_url or OLLAMA_API_BASE_URL
     analyses = []
     for model in selected_models:
         try:
             resp = requests.post(
-                f"{OLLAMA_API_BASE_URL}/api/generate",
+                f"{base_url}/api/generate",
                 json={"model": model, "prompt": final_prompt, "stream": False},
                 timeout=180,
             )
@@ -120,7 +123,7 @@ async def ocr_check(
     if all(item["analysis"] is None for item in analyses):
         raise HTTPException(
             status_code=503,
-            detail=f"Ollama service at {OLLAMA_API_BASE_URL} not reachable or all selected models failed.",
+            detail=f"Ollama service at {base_url} not reachable or all selected models failed.",
         )
 
     return JSONResponse(
