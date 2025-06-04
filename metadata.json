@@ -1,0 +1,5 @@
+{
+  "name": "Turkish Check Analyzer",
+  "description": "An application to upload Turkish bank check images, extract text using AI, and analyze the content to identify key-value pairs and determine if it's the front or back side.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,137 @@
+# === Node (React Frontend) ===
+node_modules/
+dist/
+build/
+*.log
+*.tsbuildinfo
+.vite/
+.env
+.env.local
+.env.development
+.env.production
+.vscode/
+
+# === Python (FastAPI Backend) ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+*.db
+*.egg-info/
+.venv/
+env/
+venv/
+.mypy_cache/
+.pytest_cache/
+.coverage
+.DS_Store
+
+# === Virtualenv / Conda
+*.env
+*.env.bak
+*.envrc
+*.conda
+*.ipynb_checkpoints/
+
+# === LLM / OCR Cache ===
+ocr_output/
+ocr_cache/
+ollama_cache/
+ollama_models/
+llama_weights/
+llama_checkpoints/
+model_cache/
+prompt_cache/
+check_samples/
+uploads/
+temp/
+tmp/
+
+# === IDEs & Editors ===
+.idea/
+*.iml
+*.suo
+*.ntvs_analysis.dat
+*.sw?
+*.bak
+*.tmp
+*.orig
+Thumbs.db
+desktop.ini
+
+# === System Files ===
+.DS_Store
+*.DS_Store
+ehthumbs.db
+Icon?
+*.lnk
+
+# === Logs & Reports ===
+logs/
+*.log
+*.out
+*.err
+*.pid
+*.coverage
+*.xml
+*.gz
+*.zip
+*.tar
+*.tar.gz
+
+# === Output Folders ===
+output/
+results/
+screenshots/
+media/
+__generated__/
+
+# === Docker ===
+*.pid
+*.seed
+docker-compose.override.yml
+.env.docker
+.dockerignore
+Dockerfile.local
+
+# === Ollama specific (optional) ===
+.ollama/
+ollama/
+
+# === VS Code ===
+.vscode/
+.history/
+
+# === Test files ===
+coverage/
+*.test.ts
+*.spec.ts
+*.test.js
+*.spec.js
+
+# === Frontend build ===
+out/
+.next/
+.next-static/
+storybook-static/
+.cache/
+.yarn/
+.pnpm-store/
+
+# === Misc ===
+*.pem
+*.crt
+*.key
+*.bak
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === Custom: Check upload & output folders ===
+/uploads/
+/extracted/
+/inference_results/
+/user_files/
+/frontend/public/uploads/
