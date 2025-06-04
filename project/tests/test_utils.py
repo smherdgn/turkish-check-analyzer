@@ -65,3 +65,35 @@ def test_extract_text_easyocr_success(monkeypatch):
     img = Image.new("RGB", (10, 10))
     text = ocr_utils.extract_text_easyocr(img)
     assert text == 'text'
+
+
+def test_extract_text_paddleocr_success(monkeypatch):
+    class PaddleOCR:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def ocr(self, array, cls=True):
+            return [[None, ("ptext", None)]]
+
+    dummy_module = types.SimpleNamespace(PaddleOCR=PaddleOCR)
+    monkeypatch.setitem(sys.modules, 'paddleocr', dummy_module)
+    monkeypatch.setattr(ocr_utils, 'PaddleOCR', PaddleOCR)
+    img = Image.new("RGB", (10, 10))
+    text = ocr_utils.extract_text_paddleocr(img)
+    assert text == 'ptext'
+
+
+def test_extract_text_paddleocr_failure(monkeypatch):
+    class PaddleOCR:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def ocr(self, array, cls=True):
+            raise ValueError('bad')
+
+    dummy_module = types.SimpleNamespace(PaddleOCR=PaddleOCR)
+    monkeypatch.setitem(sys.modules, 'paddleocr', dummy_module)
+    monkeypatch.setattr(ocr_utils, 'PaddleOCR', PaddleOCR)
+    img = Image.new("RGB", (10, 10))
+    with pytest.raises(RuntimeError):
+        ocr_utils.extract_text_paddleocr(img)
