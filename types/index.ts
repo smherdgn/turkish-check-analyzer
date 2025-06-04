@@ -26,6 +26,14 @@ export interface LLMAnalysis {
   error?: string | null;
 }
 
+// Result for a single processed check image
+export interface CheckResult {
+  imageSrc: string;
+  ocrTesseract: string | null;
+  ocrEasyOcr: string | null;
+  llmAnalyses: LLMAnalysis[] | null;
+}
+
 export interface CheckAnalysisResponse {
   raw_ocr_tesseract: string | null;
   raw_ocr_easyocr: string | null;

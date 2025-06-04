@@ -18,6 +18,7 @@ import {
   ProcessingError,
   CheckAnalysisResponse,
   CheckDetails,
+  CheckResult,
 } from "./types";
 
 const GARANTI_GREEN = "#1EA48A";
@@ -34,6 +35,7 @@ const App: React.FC = () => {
   const [ocrTesseract, setOcrTesseract] = useState<string | null>(null);
   const [ocrEasyOcr, setOcrEasyOcr] = useState<string | null>(null);
   const [llmAnalyses, setLlmAnalyses] = useState<LLMAnalysis[] | null>(null);
+  const [checkResults, setCheckResults] = useState<CheckResult[]>([]);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<ProcessingError | null>(null);
@@ -180,8 +182,122 @@ const App: React.FC = () => {
     );
   };
 
-  const handleImageUpload = useCallback(
-    async (file: File) => {
+  const processSingleImage = useCallback(
+    async (file: File): Promise<CheckResult | null> => {
+      const totalStartTime = Date.now();
+      recordTiming("totalProcessing", totalStartTime);
+
+      setError(null);
+      setCurrentStep("");
+      setProcessingTimes({});
+
+      const imageUploadStart = Date.now();
+      recordTiming("imageUpload", imageUploadStart);
+
+      let base64ImageWithMime: string;
+      try {
+        base64ImageWithMime = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error("Failed to read file."));
+          reader.readAsDataURL(file);
+        });
+        setUploadedImage(base64ImageWithMime);
+      } catch {
+        setError({ step: "Image Upload", message: "Failed to read file." });
+        return null;
+      }
+
+      const imageUploadEnd = Date.now();
+      recordTiming("imageUpload", imageUploadStart, imageUploadEnd);
+
+      const formData = new FormData();
+      formData.append("image_file", file);
+      formData.append(
+        "selected_models_json",
+        JSON.stringify(selectedOllamaModels)
+      );
+
+      try {
+        const processingStart = Date.now();
+        recordTiming("imageProcessing", processingStart);
+
+        setCurrentStep("Processing image and extracting text...");
+
+        const response = await fetch(
+          `${BACKEND_BASE_URL}/api/ocr-check?ollama_url=${encodeURIComponent(
+            ollamaUrl
+          )}`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        if (!response.ok) {
+          let errorData;
+          try {
+            errorData = await response.json();
+          } catch (e) {
+            errorData = {
+              message: `Server error (HTTP ${response.status}): ${response.statusText}`,
+              detail: `Server error (HTTP ${response.status}): ${response.statusText}. Is the backend server at ${BACKEND_BASE_URL} running?`,
+            };
+          }
+          console.error("Backend error:", errorData);
+          const detailMessage =
+            errorData.detail ||
+            errorData.message ||
+            `Server error: ${response.status}`;
+          checkForSetupError(detailMessage);
+          throw new Error(detailMessage);
+        }
+
+        setCurrentStep("Analyzing with AI models...");
+        const data: CheckAnalysisResponse = await response.json();
+
+        const processingEnd = Date.now();
+        recordTiming("imageProcessing", processingStart, processingEnd);
+
+        if (data.processing_time) {
+          recordTiming(
+            "llmProcessing",
+            processingStart,
+            processingStart + data.processing_time * 1000
+          );
+        }
+
+        setOcrTesseract(data.raw_ocr_tesseract);
+        setOcrEasyOcr(data.raw_ocr_easyocr);
+        setLlmAnalyses(data.llm_analyses);
+
+        const totalEndTime = Date.now();
+        recordTiming("totalProcessing", totalStartTime, totalEndTime);
+
+        return {
+          imageSrc: base64ImageWithMime,
+          ocrTesseract: data.raw_ocr_tesseract,
+          ocrEasyOcr: data.raw_ocr_easyocr,
+          llmAnalyses: data.llm_analyses,
+        };
+      } catch (err) {
+        console.error(err);
+        const errorMessage =
+          err instanceof Error ? err.message : "An unknown error occurred.";
+        setError({
+          step: "Check Processing",
+          message: `Failed to process check: ${errorMessage}`,
+        });
+        checkForSetupError(errorMessage);
+        recordTiming("totalProcessing", totalStartTime, Date.now());
+        return null;
+      }
+    },
+    [selectedOllamaModels, ollamaUrl]
+  );
+
+  const handleImagesUpload = useCallback(
+    async (files: File[]) => {
       if (selectedOllamaModels.length === 0) {
         setError({
           step: "Setup",
@@ -191,122 +307,18 @@ const App: React.FC = () => {
         return;
       }
 
-      const totalStartTime = Date.now();
-      recordTiming("totalProcessing", totalStartTime);
-
-      // Reset previous results
-      setError(null);
-      setUploadedImage(null);
-      setOcrTesseract(null);
-      setOcrEasyOcr(null);
-      setLlmAnalyses(null);
+      setCheckResults([]);
       setIsLoading(true);
-      setCurrentStep("");
-      setProcessingTimes({}); // Reset timing data
-
-      const imageUploadStart = Date.now();
-      recordTiming("imageUpload", imageUploadStart);
-
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-
-      reader.onload = async () => {
-        const base64ImageWithMime = reader.result as string;
-        setUploadedImage(base64ImageWithMime);
-
-        const imageUploadEnd = Date.now();
-        recordTiming("imageUpload", imageUploadStart, imageUploadEnd);
-
-        const formData = new FormData();
-        formData.append("image_file", file);
-        formData.append(
-          "selected_models_json",
-          JSON.stringify(selectedOllamaModels)
-        );
-
-        try {
-          const processingStart = Date.now();
-          recordTiming("imageProcessing", processingStart);
-
-          setCurrentStep("Processing image and extracting text...");
-
-          const response = await fetch(
-            `${BACKEND_BASE_URL}/api/ocr-check?ollama_url=${encodeURIComponent(
-              ollamaUrl
-            )}`,
-            {
-              method: "POST",
-              body: formData,
-            }
-          );
-
-          if (!response.ok) {
-            let errorData;
-            try {
-              errorData = await response.json();
-            } catch (e) {
-              errorData = {
-                message: `Server error (HTTP ${response.status}): ${response.statusText}`,
-                detail: `Server error (HTTP ${response.status}): ${response.statusText}. Is the backend server at ${BACKEND_BASE_URL} running?`,
-              };
-            }
-            console.error("Backend error:", errorData);
-            const detailMessage =
-              errorData.detail ||
-              errorData.message ||
-              `Server error: ${response.status}`;
-            checkForSetupError(detailMessage);
-            throw new Error(detailMessage);
-          }
-
-          setCurrentStep("Analyzing with AI models...");
-          const data: CheckAnalysisResponse = await response.json();
-
-          const processingEnd = Date.now();
-          recordTiming("imageProcessing", processingStart, processingEnd);
-
-          // Extract processing times from backend response if available
-          if (data.processing_time) {
-            recordTiming(
-              "llmProcessing",
-              processingStart,
-              processingStart + data.processing_time * 1000
-            );
-          }
-
-          setOcrTesseract(data.raw_ocr_tesseract);
-          setOcrEasyOcr(data.raw_ocr_easyocr);
-          setLlmAnalyses(data.llm_analyses);
-
-          const totalEndTime = Date.now();
-          recordTiming("totalProcessing", totalStartTime, totalEndTime);
-        } catch (err) {
-          console.error(err);
-          const errorMessage =
-            err instanceof Error ? err.message : "An unknown error occurred.";
-          setError({
-            step: "Check Processing",
-            message: `Failed to process check: ${errorMessage}`,
-          });
-          checkForSetupError(errorMessage);
-
-          const totalEndTime = Date.now();
-          recordTiming("totalProcessing", totalStartTime, totalEndTime);
-        } finally {
-          setIsLoading(false);
-          setCurrentStep("");
+      for (const file of files) {
+        const result = await processSingleImage(file);
+        if (result) {
+          setCheckResults((prev) => [...prev, result]);
         }
-      };
-
-      reader.onerror = () => {
-        setError({ step: "Image Upload", message: "Failed to read file." });
-        setIsLoading(false);
-
-        const totalEndTime = Date.now();
-        recordTiming("totalProcessing", totalStartTime, totalEndTime);
-      };
+      }
+      setIsLoading(false);
+      setCurrentStep("");
     },
-    [selectedOllamaModels, ollamaUrl]
+    [processSingleImage, selectedOllamaModels]
   );
 
   const formatKeyForPdf = (key: string): string => {
@@ -921,7 +933,7 @@ const App: React.FC = () => {
 
           {/* Image Upload */}
           <ImageUpload
-            onImageUpload={handleImageUpload}
+            onImageUpload={handleImagesUpload}
             disabled={isLoading || selectedOllamaModels.length === 0}
           />
 
@@ -954,42 +966,23 @@ const App: React.FC = () => {
           )}
 
           {/* Results */}
-          {!isLoading && (uploadedImage || llmAnalyses) && !error && (
+          {!isLoading && checkResults.length > 0 && !error && (
             <div className="space-y-8">
-              <CheckDisplay
-                imageSrc={uploadedImage}
-                rawOcrTesseract={ocrTesseract}
-                rawOcrEasyOcr={ocrEasyOcr}
-                llmAnalyses={llmAnalyses}
-              />
-
-              {/* View Report Button */}
-              <div className="text-center">
-                <button
-                  onClick={() => setCurrentPage("report")}
-                  disabled={!uploadedImage && !llmAnalyses}
-                  className={`inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
-                    !uploadedImage && !llmAnalyses
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "hover:bg-green-700 hover:shadow-md transform hover:-translate-y-0.5"
-                  }`}
-                  style={{
-                    backgroundColor:
-                      !uploadedImage && !llmAnalyses
-                        ? undefined
-                        : GARANTI_GREEN,
-                  }}
-                >
-                  <FileText className="h-5 w-5 mr-2" />
-                  View Detailed Report
-                </button>
-              </div>
+              {checkResults.map((res, idx) => (
+                <CheckDisplay
+                  key={idx}
+                  imageSrc={res.imageSrc}
+                  rawOcrTesseract={res.ocrTesseract}
+                  rawOcrEasyOcr={res.ocrEasyOcr}
+                  llmAnalyses={res.llmAnalyses}
+                />
+              ))}
             </div>
           )}
 
           {/* Placeholder State */}
           {!isLoading &&
-            !uploadedImage &&
+            checkResults.length === 0 &&
             !error &&
             availableOllamaModels.length > 0 && (
               <div className="text-center py-16">
