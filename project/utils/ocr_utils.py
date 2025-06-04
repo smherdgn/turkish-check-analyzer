@@ -15,7 +15,7 @@ def extract_text_tesseract(image: Image.Image) -> str:
 def extract_text_easyocr(image: Image.Image) -> str:
     """Run EasyOCR on a PIL image."""
     try:
-        reader = easyocr.Reader(["tr", "en"], gpu=False)
+        reader = easyocr.Reader(["tr", "en"], gpu=True)
         results = reader.readtext(np.array(image))
         text = "\n".join([res[1] for res in results])
         return text
