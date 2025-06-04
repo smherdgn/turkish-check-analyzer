@@ -254,7 +254,3 @@ The API will return appropriate HTTP status codes for errors. The response body 
 - **Ollama Model**: The choice of LLM (e.g., `llama3`, `mistral`, `phi3`) can significantly impact processing time and the quality of the extracted JSON.
 - **Logging**: The current backend uses `print()` for some informational messages. For production or more detailed debugging, consider integrating Python's `logging` module.
 - **Frontend-Backend Contract**: Ensure the JSON structures (especially for `POST /api/ocr-check` request and response) stay synchronized between the frontend (e.g., `types.ts`) and backend (`app.py`).
-
-```
-
-```

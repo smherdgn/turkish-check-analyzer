@@ -201,4 +201,3 @@ The exact fields and their values in the `analysis` object will depend on each L
 -   **Ollama Model**: The choice of LLM (e.g., `llama3`, `mistral`, `phi3`) can significantly impact processing time and the quality of the extracted JSON.
 -   **Logging**: The current backend uses `print()`. For production, consider Python's `logging` module.
 -   **Frontend-Backend Contract**: Ensure the JSON structures (especially for `POST /api/ocr-check` request and response) stay synchronized between the frontend (`types.ts`) and backend (`app.py`).
-```
