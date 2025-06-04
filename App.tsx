@@ -100,7 +100,10 @@ const App: React.FC = () => {
 
       const formData = new FormData();
       formData.append('image_file', file);
-      formData.append('selected_models_json', JSON.stringify(selectedOllamaModels));
+      formData.append(
+        'selected_models_json',
+        JSON.stringify(selectedOllamaModels.map((m) => m.trim()))
+      );
 
       try {
         setCurrentStep('Extracting text with Tesseract & EasyOCR...');
