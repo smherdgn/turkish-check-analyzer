@@ -1,7 +1,6 @@
 import json
 import os
 from pathlib import Path
-from typing import List
 
 import requests
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
