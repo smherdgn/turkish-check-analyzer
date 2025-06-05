@@ -34,6 +34,7 @@ const App: React.FC = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [ocrTesseract, setOcrTesseract] = useState<string | null>(null);
   const [ocrEasyOcr, setOcrEasyOcr] = useState<string | null>(null);
+  const [ocrPaddleOcr, setOcrPaddleOcr] = useState<string | null>(null);
   const [llmAnalyses, setLlmAnalyses] = useState<LLMAnalysis[] | null>(null);
   const [checkResults, setCheckResults] = useState<CheckResult[]>([]);
 
@@ -111,6 +112,7 @@ const App: React.FC = () => {
         uploadedImage={uploadedImage}
         ocrTesseract={ocrTesseract}
         ocrEasyOcr={ocrEasyOcr}
+        ocrPaddleOcr={ocrPaddleOcr}
         llmAnalyses={llmAnalyses}
         selectedModels={selectedOllamaModels}
         processingTimes={processingTimes}
@@ -269,6 +271,7 @@ const App: React.FC = () => {
 
         setOcrTesseract(data.raw_ocr_tesseract);
         setOcrEasyOcr(data.raw_ocr_easyocr);
+        setOcrPaddleOcr(data.raw_ocr_paddleocr);
         setLlmAnalyses(data.llm_analyses);
 
         const totalEndTime = Date.now();
@@ -278,6 +281,7 @@ const App: React.FC = () => {
           imageSrc: base64ImageWithMime,
           ocrTesseract: data.raw_ocr_tesseract,
           ocrEasyOcr: data.raw_ocr_easyocr,
+          ocrPaddleOcr: data.raw_ocr_paddleocr,
           llmAnalyses: data.llm_analyses,
         };
       } catch (err) {
@@ -332,7 +336,13 @@ const App: React.FC = () => {
   };
 
   const generatePdfReport = async () => {
-    if (!uploadedImage && !ocrTesseract && !ocrEasyOcr && !llmAnalyses) {
+    if (
+      !uploadedImage &&
+      !ocrTesseract &&
+      !ocrEasyOcr &&
+      !ocrPaddleOcr &&
+      !llmAnalyses
+    ) {
       alert("No data available to generate PDF report.");
       return;
     }
@@ -529,15 +539,13 @@ const App: React.FC = () => {
         },
         {
           step: "3. OCR Text Extraction",
-          description: "Dual OCR processing with Tesseract and EasyOCR",
+          description: "Triple OCR processing with Tesseract, EasyOCR and PaddleOCR",
           details: `Tesseract: ${
-            ocrTesseract
-              ? `${ocrTesseract.length} chars extracted`
-              : "No text extracted"
+            ocrTesseract ? `${ocrTesseract.length} chars extracted` : "No text extracted"
           }\nEasyOCR: ${
-            ocrEasyOcr
-              ? `${ocrEasyOcr.length} chars extracted`
-              : "No text extracted"
+            ocrEasyOcr ? `${ocrEasyOcr.length} chars extracted` : "No text extracted"
+          }\nPaddleOCR: ${
+            ocrPaddleOcr ? `${ocrPaddleOcr.length} chars extracted` : "No text extracted"
           }\n${
             processingTimes.imageProcessing
               ? `⏱️ Processing Time: ${formatDuration(
@@ -637,7 +645,7 @@ const App: React.FC = () => {
       }
 
       // ===== OCR RESULTS SECTION =====
-      if (ocrTesseract || ocrEasyOcr) {
+      if (ocrTesseract || ocrEasyOcr || ocrPaddleOcr) {
         checkAndAddNewPage(20);
         doc.setFontSize(16);
         doc.setFont("helvetica", "bold");
@@ -689,6 +697,30 @@ const App: React.FC = () => {
           doc.setTextColor(60, 60, 60);
           const easyocrLines = doc.splitTextToSize(ocrEasyOcr, contentWidth);
           easyocrLines.forEach((line: string) => {
+            checkAndAddNewPage(4);
+            doc.text(line, margin, currentY);
+            currentY += 4;
+          });
+          currentY += 8;
+        }
+
+        if (ocrPaddleOcr) {
+          checkAndAddNewPage(15);
+          doc.setFontSize(12);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(0, 0, 0);
+          doc.text(
+            `📝 PaddleOCR (${ocrPaddleOcr.length} characters)`,
+            margin,
+            currentY
+          );
+          currentY += 8;
+
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(60, 60, 60);
+          const paddleLines = doc.splitTextToSize(ocrPaddleOcr, contentWidth);
+          paddleLines.forEach((line: string) => {
             checkAndAddNewPage(4);
             doc.text(line, margin, currentY);
             currentY += 4;
@@ -974,9 +1006,28 @@ const App: React.FC = () => {
                   imageSrc={res.imageSrc}
                   rawOcrTesseract={res.ocrTesseract}
                   rawOcrEasyOcr={res.ocrEasyOcr}
+                  rawOcrPaddleOcr={res.ocrPaddleOcr}
                   llmAnalyses={res.llmAnalyses}
                 />
               ))}
+              <div className="text-center">
+                <button
+                  onClick={() => setCurrentPage("report")}
+                  disabled={!uploadedImage && !llmAnalyses}
+                  className={`inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
+                    !uploadedImage && !llmAnalyses
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "hover:bg-green-700 hover:shadow-md transform hover:-translate-y-0.5"
+                  }`}
+                  style={{
+                    backgroundColor:
+                      !uploadedImage && !llmAnalyses ? undefined : GARANTI_GREEN,
+                  }}
+                >
+                  <FileText className="h-5 w-5 mr-2" />
+                  View Detailed Report
+                </button>
+              </div>
             </div>
           )}
 
