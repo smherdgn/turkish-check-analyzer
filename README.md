@@ -9,8 +9,10 @@ This project provides a Python backend service using FastAPI to process scanned 
   - `POST /api/ocr-check`: For uploading check images and selecting Ollama models for analysis.
 - **Image Pre-processing**: Includes grayscale conversion, denoising, skew correction, adaptive thresholding using OpenCV and Pillow.
 - **Triple OCR**: Extracts text using Tesseract, EasyOCR, and PaddleOCR.
-- **Multi-LLM Analysis**: Sends combined OCR text to one or more selected local Ollama LLM instances with a custom prompt for structured data extraction (e.g., IBAN, amount, date, check side).
-- **Configurable**: Ollama API URL (for backend-to-Ollama communication) and prompt template can be configured.
+ - **Individual OCR Results**: Shows the output from each OCR engine separately, even if empty.
+- **Multi-LLM Analysis**: Sends combined OCR text to one or more selected local Ollama LLM instances with a custom prompt for structured data extraction (e.g., IBAN, amount, date, check side). Each model's JSON output is displayed individually.
+ - **Multi-LLM Analysis**: Sends combined OCR text to one or more selected local Ollama LLM instances with a custom prompt for structured data extraction (e.g., IBAN, amount, date, check side).
+ - **Configurable**: Ollama API URL (for backend-to-Ollama communication) and prompt template can be configured.
 
 ## Folder Structure
 
@@ -296,8 +298,11 @@ Bu Python arka ucu FastAPI kullanır ve Türk banka çeklerinden metin çıkarma
   - `POST /api/ocr-check`: Çek görsellerini yükleyip seçilen modeller ile analiz eder.
 - **Görüntü Ön İşleme**: Gri tonlama, gürültü giderme, eğiklik düzeltme ve uyarlamalı eşikleme adımlarını içerir.
 - **Üçlü OCR**: Tesseract, EasyOCR ve PaddleOCR çıktıları birleştirilir.
+ - **Her OCR Sonucu**: Tüm OCR motorlarının çıktıları, boş olsa bile ayrı ayrı gösterilir.
 - **Çoklu LLM Analizi**: Birden fazla Ollama modeliyle çalışarak JSON formatında sonuç döner.
-- **Yapılandırılabilir**: Ollama API adresi ve istemci promptu değiştirilebilir.
+- **Model Bazında Sonuçlar**: Her modelin JSON çıktısı ekran ve raporda anahtar-değer listesi olarak sunulur.
+ - **Çoklu LLM Analizi**: Birden fazla Ollama modeliyle çalışarak JSON formatında sonuç döner.
+ - **Yapılandırılabilir**: Ollama API adresi ve istemci promptu değiştirilebilir.
 
 ### Kurulum
 

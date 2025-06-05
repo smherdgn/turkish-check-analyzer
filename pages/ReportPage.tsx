@@ -19,6 +19,7 @@ interface ReportPageProps {
   uploadedImage: string | null;
   ocrTesseract: string | null;
   ocrEasyOcr: string | null;
+  ocrPaddleOcr: string | null;
   llmAnalyses: LLMAnalysis[] | null;
   selectedModels: string[];
   processingTimes: {
@@ -199,6 +200,7 @@ export const ReportPage: React.FC<ReportPageProps> = ({
   uploadedImage,
   ocrTesseract,
   ocrEasyOcr,
+  ocrPaddleOcr,
   llmAnalyses,
   selectedModels,
   processingTimes,
@@ -293,7 +295,7 @@ export const ReportPage: React.FC<ReportPageProps> = ({
             : "No timing data",
         },
         {
-          step: "OCR & AI Analysis",
+          step: "OCR & AI Analysis (Triple OCR)",
           details: processingTimes.imageProcessing
             ? `${formatDuration(processingTimes.imageProcessing.duration)}`
             : "No timing data",
@@ -339,7 +341,7 @@ export const ReportPage: React.FC<ReportPageProps> = ({
       }
 
       // OCR Results
-      if (ocrTesseract || ocrEasyOcr) {
+      if (ocrTesseract || ocrEasyOcr || ocrPaddleOcr) {
         addStatusUpdate("Adding OCR results...", "info");
         checkAndAddNewPage(20);
         doc.setFontSize(16);
@@ -366,6 +368,31 @@ export const ReportPage: React.FC<ReportPageProps> = ({
           doc.setFont("helvetica", "normal");
           const lines = doc.splitTextToSize(truncatedText, contentWidth);
           lines.slice(0, 10).forEach((line: string) => {
+            checkAndAddNewPage(4);
+            doc.text(line, margin, currentY);
+            currentY += 4;
+          });
+          currentY += 8;
+        }
+
+        if (ocrPaddleOcr) {
+          doc.setFontSize(12);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(0, 0, 0);
+          doc.text(
+            `PaddleOCR: ${ocrPaddleOcr.length} characters`,
+            margin,
+            currentY
+          );
+          currentY += 8;
+          const truncated =
+            ocrPaddleOcr.length > 200
+              ? ocrPaddleOcr.substring(0, 200) + "..."
+              : ocrPaddleOcr;
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "normal");
+          const plines = doc.splitTextToSize(truncated, contentWidth);
+          plines.slice(0, 10).forEach((line: string) => {
             checkAndAddNewPage(4);
             doc.text(line, margin, currentY);
             currentY += 4;
@@ -402,19 +429,14 @@ export const ReportPage: React.FC<ReportPageProps> = ({
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
 
-            const keyFields = ["bank_name", "amount", "date", "receiver"];
-            keyFields.forEach((key) => {
-              if (analysis[key as keyof CheckDetails]) {
+            Object.entries(analysis).forEach(([key, value]) => {
+              if (value !== null && value !== undefined && String(value) !== "") {
                 checkAndAddNewPage(5);
                 doc.setFont("helvetica", "bold");
                 doc.text(`${formatKeyForPdf(key)}: `, margin + 5, currentY);
                 const keyWidth = doc.getTextWidth(`${formatKeyForPdf(key)}: `);
                 doc.setFont("helvetica", "normal");
-                doc.text(
-                  String(analysis[key as keyof CheckDetails]),
-                  margin + 5 + keyWidth,
-                  currentY
-                );
+                doc.text(String(value), margin + 5 + keyWidth, currentY);
                 currentY += 5;
               }
             });
@@ -577,6 +599,12 @@ export const ReportPage: React.FC<ReportPageProps> = ({
                     {ocrEasyOcr ? `${ocrEasyOcr.length} chars` : "No text"}
                   </span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">PaddleOCR:</span>
+                  <span>
+                    {ocrPaddleOcr ? `${ocrPaddleOcr.length} chars` : "No text"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -669,9 +697,7 @@ export const ReportPage: React.FC<ReportPageProps> = ({
                         </p>
                       ) : analysis.analysis ? (
                         <div className="space-y-1 text-sm">
-                          {Object.entries(analysis.analysis)
-                            .slice(0, 3)
-                            .map(
+                          {Object.entries(analysis.analysis).map(
                               ([key, value]) =>
                                 value && (
                                   <div
