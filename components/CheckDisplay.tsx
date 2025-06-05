@@ -7,6 +7,7 @@ interface CheckDisplayProps {
   imageSrc: string | null;
   rawOcrTesseract: string | null;
   rawOcrEasyOcr: string | null;
+  rawOcrPaddleOcr: string | null;
   llmAnalyses: LLMAnalysis[] | null;
 }
 
@@ -48,42 +49,54 @@ export const CheckDisplay: React.FC<CheckDisplayProps> = ({
     )}
 
     {/* OCR Results */}
-    {(rawOcrTesseract || rawOcrEasyOcr) && (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <FileText className="h-5 w-5 mr-2 text-green-600" />
-          OCR Extraction Results
-        </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {rawOcrTesseract && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium text-gray-900">Tesseract OCR</h3>
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                  {rawOcrTesseract.length} chars
-                </span>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4 text-sm font-mono text-gray-700 max-h-48 overflow-y-auto border">
-                <pre className="whitespace-pre-wrap">{rawOcrTesseract}</pre>
-              </div>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <FileText className="h-5 w-5 mr-2 text-green-600" />
+        OCR Extraction Results
+      </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-gray-900">Tesseract OCR</h3>
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                {rawOcrTesseract ? rawOcrTesseract.length : 0} chars
+              </span>
             </div>
-          )}
-          {rawOcrEasyOcr && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium text-gray-900">EasyOCR</h3>
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                  {rawOcrEasyOcr.length} chars
-                </span>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4 text-sm font-mono text-gray-700 max-h-48 overflow-y-auto border">
-                <pre className="whitespace-pre-wrap">{rawOcrEasyOcr}</pre>
-              </div>
+            <div className="bg-gray-50 rounded-lg p-4 text-sm font-mono text-gray-700 max-h-48 overflow-y-auto border">
+              <pre className="whitespace-pre-wrap">
+                {rawOcrTesseract || "(no text)"}
+              </pre>
             </div>
-          )}
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-gray-900">EasyOCR</h3>
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                {rawOcrEasyOcr ? rawOcrEasyOcr.length : 0} chars
+              </span>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4 text-sm font-mono text-gray-700 max-h-48 overflow-y-auto border">
+              <pre className="whitespace-pre-wrap">
+                {rawOcrEasyOcr || "(no text)"}
+              </pre>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-gray-900">PaddleOCR</h3>
+              <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                {rawOcrPaddleOcr ? rawOcrPaddleOcr.length : 0} chars
+              </span>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4 text-sm font-mono text-gray-700 max-h-48 overflow-y-auto border">
+              <pre className="whitespace-pre-wrap">
+                {rawOcrPaddleOcr || "(no text)"}
+              </pre>
+            </div>
+          </div>
         </div>
       </div>
-    )}
+    )
 
     {/* LLM Analysis Results */}
     {llmAnalyses && llmAnalyses.length > 0 && (

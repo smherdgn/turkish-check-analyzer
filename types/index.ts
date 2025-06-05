@@ -31,12 +31,14 @@ export interface CheckResult {
   imageSrc: string;
   ocrTesseract: string | null;
   ocrEasyOcr: string | null;
+  ocrPaddleOcr: string | null;
   llmAnalyses: LLMAnalysis[] | null;
 }
 
 export interface CheckAnalysisResponse {
   raw_ocr_tesseract: string | null;
   raw_ocr_easyocr: string | null;
+  raw_ocr_paddleocr: string | null;
   llm_analyses: LLMAnalysis[];
   processing_time?: number;
   success_rate?: string;

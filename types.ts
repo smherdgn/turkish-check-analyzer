@@ -21,6 +21,7 @@ export interface CheckResult {
   imageSrc: string;
   ocrTesseract: string | null;
   ocrEasyOcr: string | null;
+  ocrPaddleOcr: string | null;
   llmAnalyses: LLMAnalysis[] | null;
 }
 
@@ -28,6 +29,7 @@ export interface CheckResult {
 export interface FullCheckAnalysisResponse {
   raw_ocr_tesseract: string | null;
   raw_ocr_easyocr: string | null;
+  raw_ocr_paddleocr: string | null;
   llm_analyses: LLMAnalysis[];
 }
 
